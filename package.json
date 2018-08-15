@@ -1,0 +1,19 @@
+{
+  "name": "sticks-game",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "games",
+    "vue",
+    "js"
+  ],
+  "author": "anton zlydenko",
+  "license": "ISC",
+  "dependencies": {
+    "vue": "^2.5.17"
+  }
+}
