@@ -6,17 +6,17 @@
 
 <script>
 export default {
-  name: 'app',
-  data () {
+  name: "App",
+  data() {
     return {
-      msg: 'Welcome to Your Vue.js App!'
-    }
+      msg: "Welcome to Your Vue.js App!"
+    };
   }
-}
+};
 </script>
 
 <style lang="css">
-  #app {
-    color: #56b983;
-  }
+#app {
+  color: #56b983;
+}
 </style>
