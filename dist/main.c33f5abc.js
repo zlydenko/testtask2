@@ -7762,10 +7762,19 @@ if (module.hot) {
       });
     },
     methods: {
+      isGameOver: function isGameOver() {
+        return this.playableFields.filter(function (field) {
+          return field.borders.disabled === false;
+        }).length === 0;
+      },
       delegateMove: function delegateMove() {
-        this.players.forEach(function (player, _i, _arr) {
-          player.turn = !player.turn;
-        });
+        if (this.isGameOver()) {
+          this.finished = true;
+        } else {
+          this.players.forEach(function (player, _i, _arr) {
+            player.turn = !player.turn;
+          });
+        }
       },
       findNeighbours: function findNeighbours(index) {
         var top = this.playableFields.filter(function (x) {
@@ -7819,7 +7828,9 @@ if (module.hot) {
         activeField.borders.disabled = true;
         activeField.bgc = player.color;
         console.log("capturing #" + id + " field by " + player.name);
-        console.log("deleting unplayable field");
+        if (this.isGameOver()) {
+          this.finished = true;
+        }
       },
       chosenBorder: function chosenBorder(data) {
         var id = data.id;
@@ -7879,7 +7890,7 @@ if (__vue__options__.functional) {
   console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
 }
 __vue__options__.render = function render() {
-  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [_c('h5', [_vm._v("now " + _vm._s(_vm.playerMove.name + '\'s turn'))]), _vm._v(" "), _vm._l(_vm.fields, function (element, index) {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [!this.finished ? _c('h5', [_vm._v("now " + _vm._s(_vm.playerMove.name + '\'s turn'))]) : _c('h5', [_vm._v("game over")]), _vm._v(" "), _vm._l(_vm.fields, function (element, index) {
     return _c('div', { key: index, staticClass: "row" }, _vm._l(element, function (fields) {
       return !fields.blank ? _c('game-field', { key: fields.id, attrs: { "field-details": fields }, on: { "choseField": _vm.chosenField, "borderClicked": _vm.chosenBorder } }) : _c('game-field', { attrs: { "is-blank": true } });
     }));
@@ -7953,7 +7964,7 @@ function Module(config) {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:61550/');
+  var ws = new WebSocket('ws://localhost:58541/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 

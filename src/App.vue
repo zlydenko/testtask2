@@ -1,6 +1,7 @@
 <template>
   <div>
-    <h5>now {{playerMove.name + '\'s turn'}}</h5>
+    <h5 v-if="!this.finished">now {{playerMove.name + '\'s turn'}}</h5>
+    <h5 v-else>game over</h5>
     <div class="row" v-for="(element,index) in fields" :key="index">
       <game-field @choseField="chosenField" @borderClicked="chosenBorder" v-if="!fields.blank" v-for="(fields) in element" :key="fields.id" :field-details="fields"></game-field>
       <game-field v-else :is-blank="true"></game-field>
@@ -98,10 +99,20 @@ export default {
     });
   },
   methods: {
+    isGameOver: function() {
+      return (
+        this.playableFields.filter(field => field.borders.disabled === false)
+          .length === 0
+      );
+    },
     delegateMove: function() {
-      this.players.forEach((player, _i, _arr) => {
-        player.turn = !player.turn;
-      });
+      if (this.isGameOver()) {
+        this.finished = true;
+      } else {
+        this.players.forEach((player, _i, _arr) => {
+          player.turn = !player.turn;
+        });
+      }
     },
     findNeighbours: function(index) {
       let top = this.playableFields.filter(x => x.id === index - 5)[0];
@@ -150,7 +161,9 @@ export default {
       activeField.borders.disabled = true;
       activeField.bgc = player.color;
       console.log(`capturing #${id} field by ${player.name}`);
-      console.log(`deleting unplayable field`);
+      if (this.isGameOver()) {
+        this.finished = true;
+      }
     },
     chosenBorder: function(data) {
       let id = data.id;
