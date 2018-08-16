@@ -7730,12 +7730,35 @@ if (module.hot) {
       });
     },
     mounted: function mounted() {
+      var _this = this;
+
       var filterPlayableFields = this.fields.map(function (arr) {
         return arr.filter(function (obj) {
           return obj.blank === false;
         });
       });
       this.playableFields = [].concat.apply([], filterPlayableFields);
+
+      this.playableFields.forEach(function (item, _i, _arr) {
+        var id = item.id;
+        var top = _this.playableFields.filter(function (x) {
+          return x.id === id - 5;
+        });
+        var bottom = _this.playableFields.filter(function (x) {
+          return x.id === id + 5;
+        });
+        var right = _this.playableFields.filter(function (x) {
+          return x.id === id + 1;
+        });
+        var left = _this.playableFields.filter(function (x) {
+          return x.id === id - 1;
+        });
+
+        if (top.length === 0) item.borders.top.disabled = true;
+        if (bottom.length === 0) item.borders.bottom.disabled = true;
+        if (right.length === 0) item.borders.right.disabled = true;
+        if (left.length === 0) item.borders.left.disabled = true;
+      });
     },
     methods: {
       chosenField: function chosenField(data) {
@@ -7791,7 +7814,7 @@ if (module.hot) {
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-15275e62", __vue__options__);
     } else {
-      hotAPI.reload("data-v-15275e62", __vue__options__);
+      hotAPI.rerender("data-v-15275e62", __vue__options__);
     }
   })();
 }

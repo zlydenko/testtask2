@@ -39,40 +39,39 @@ export default {
   created: function() {
     let id = 1;
     this.fields = this.templates.map(value =>
-      value.split("").map(
-        symbol =>
-          symbol === "."
-            ? { blank: true, id: id++ }
-            : {
-                id: id++,
-                blank: false,
-                active: false,
-                bgc: "",
-                borders: {
+      value.split("").map(symbol => {
+        return symbol === "."
+          ? { blank: true, id: id++ }
+          : {
+              id: id++,
+              blank: false,
+              active: false,
+              bgc: "",
+              borders: {
+                disabled: false,
+                top: {
                   disabled: false,
-                  top: {
-                    disabled: false,
-                    capturedBy: null,
-                    color: "rgb(0,0,0)"
-                  },
-                  bottom: {
-                    disabled: false,
-                    capturedBy: null,
-                    color: "rgb(0,0,0)"
-                  },
-                  left: {
-                    disabled: false,
-                    capturedBy: null,
-                    color: "rgb(0,0,0)"
-                  },
-                  right: {
-                    disabled: false,
-                    capturedBy: null,
-                    color: "rgb(0,0,0)"
-                  }
+                  capturedBy: null,
+                  color: "rgb(0,0,0)"
+                },
+                bottom: {
+                  disabled: false,
+                  capturedBy: null,
+                  color: "rgb(0,0,0)"
+                },
+                left: {
+                  disabled: false,
+                  capturedBy: null,
+                  color: "rgb(0,0,0)"
+                },
+                right: {
+                  disabled: false,
+                  capturedBy: null,
+                  color: "rgb(0,0,0)"
                 }
               }
-      )
+            };
+      })
     );
   },
   mounted: function() {
@@ -80,6 +79,23 @@ export default {
       arr.filter(obj => obj.blank === false)
     );
     this.playableFields = [].concat.apply([], filterPlayableFields);
+    //traverse array of objects
+    this.playableFields.forEach((item, _i, _arr) => {
+      let id = item.id;
+      let top = this.playableFields.filter(x => x.id === id - 5);
+      let bottom = this.playableFields.filter(x => x.id === id + 5);
+      let right = this.playableFields.filter(x => x.id === id + 1);
+      let left = this.playableFields.filter(x => x.id === id - 1);
+
+      if (top.length === 0) item.borders.top.disabled = true;
+      if (bottom.length === 0) item.borders.bottom.disabled = true;
+      if (right.length === 0) item.borders.right.disabled = true;
+      if (left.length === 0) item.borders.left.disabled = true;
+    });
+
+    //! in function that invokes when border clicked:
+    //* check neighbours and they disabled borders
+    //* if they have one - disable opposite (top disabled - disable bottom, etc.)
   },
   methods: {
     chosenField: function(data) {
