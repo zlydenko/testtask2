@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Sticks game</title>
-  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:800" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
 </head>
 
 <body>
@@ -14,72 +15,13 @@
 
   </section>
   <style>
-    .row {
-      width: 100%;
-      background-color: peachpuff;
-      float: left;
-    }
+    body {
+      padding: 0;
+      margin: 0;
+      background: #a8ff78;
+      background: -webkit-linear-gradient(to right, #78ffd6, #a8ff78);
+      background: linear-gradient(to right, #78ffd6, #a8ff78);
 
-    .row div {
-      float: left;
-    }
-
-    .box {
-      background-color: white;
-      width: 50px;
-      height: 50px;
-      position: relative;
-      box-shadow: inset 0 0 2px #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .blank-box {
-      background-color: white;
-      width: 50px;
-      height: 50px;
-      position: relative;
-    }
-
-    .topborder,
-    .bottomborder,
-    .rightborder,
-    .leftborder {
-      cursor: pointer;
-    }
-
-    .topborder,
-    .bottomborder {
-      width: 100%;
-      height: 5px;
-      background-color: black;
-    }
-
-    .topborder {
-      position: absolute;
-      top: 0;
-    }
-
-    .bottomborder {
-      position: absolute;
-      bottom: 0%;
-    }
-
-    .rightborder {
-      height: 100%;
-      width: 5px;
-      position: absolute;
-      right: 0%;
-      background-color: black;
-    }
-
-    .leftborder {
-      height: 100%;
-      width: 5px;
-      position: absolute;
-      left: 0%;
-      background-color: black;
     }
   </style>
   <script src="./src/main.js"></script>

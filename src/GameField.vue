@@ -37,3 +37,64 @@ export default {
   }
 };
 </script>
+
+<style lang="css">
+.box {
+  cursor: pointer;
+  background-color: white;
+  width: 50px;
+  height: 50px;
+  position: relative;
+  box-shadow: inset 0 0 2px #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.blank-box {
+  background-color: inherit;
+  width: 50px;
+  height: 50px;
+  position: relative;
+}
+
+.topborder,
+.bottomborder,
+.rightborder,
+.leftborder {
+  cursor: pointer;
+}
+
+.topborder,
+.bottomborder {
+  width: 100%;
+  height: 5px;
+  background-color: black;
+}
+
+.topborder {
+  position: absolute;
+  top: 0;
+}
+
+.bottomborder {
+  position: absolute;
+  bottom: 0%;
+}
+
+.rightborder {
+  height: 100%;
+  width: 5px;
+  position: absolute;
+  right: 0%;
+  background-color: black;
+}
+
+.leftborder {
+  height: 100%;
+  width: 5px;
+  position: absolute;
+  left: 0%;
+  background-color: black;
+}
+</style>

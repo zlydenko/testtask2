@@ -7349,6 +7349,31 @@ if (inBrowser) {
 /*  */
 
 exports.default = Vue;
+},{}],"node_modules\\vueify\\lib\\insert-css.js":[function(require,module,exports) {
+var inserted = exports.cache = {}
+
+function noop () {}
+
+exports.insert = function (css) {
+  if (inserted[css]) return noop
+  inserted[css] = true
+
+  var elem = document.createElement('style')
+  elem.setAttribute('type', 'text/css')
+
+  if ('textContent' in elem) {
+    elem.textContent = css
+  } else {
+    elem.styleSheet.cssText = css
+  }
+
+  document.getElementsByTagName('head')[0].appendChild(elem)
+  return function () {
+    document.getElementsByTagName('head')[0].removeChild(elem)
+    inserted[css] = false
+  }
+}
+
 },{}],"node_modules\\vue-hot-reload-api\\dist\\index.js":[function(require,module,exports) {
 var Vue // late bind
 var version
@@ -7592,7 +7617,7 @@ exports.reload = tryWrap(function (id, options) {
 })
 
 },{}],"src\\GameField.vue":[function(require,module,exports) {
-;(function () {
+var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".box {\r\n  cursor: pointer;\r\n  background-color: white;\r\n  width: 50px;\r\n  height: 50px;\r\n  position: relative;\r\n  box-shadow: inset 0 0 2px #000;\r\n  display: flex;\r\n  justify-content: center;\r\n  align-items: center;\r\n}\r\n\r\n.blank-box {\r\n  background-color: inherit;\r\n  width: 50px;\r\n  height: 50px;\r\n  position: relative;\r\n}\r\n\r\n.topborder,\r\n.bottomborder,\r\n.rightborder,\r\n.leftborder {\r\n  cursor: pointer;\r\n}\r\n\r\n.topborder,\r\n.bottomborder {\r\n  width: 100%;\r\n  height: 5px;\r\n  background-color: black;\r\n}\r\n\r\n.topborder {\r\n  position: absolute;\r\n  top: 0;\r\n}\r\n\r\n.bottomborder {\r\n  position: absolute;\r\n  bottom: 0%;\r\n}\r\n\r\n.rightborder {\r\n  height: 100%;\r\n  width: 5px;\r\n  position: absolute;\r\n  right: 0%;\r\n  background-color: black;\r\n}\r\n\r\n.leftborder {\r\n  height: 100%;\r\n  width: 5px;\r\n  position: absolute;\r\n  left: 0%;\r\n  background-color: black;\r\n}");(function () {
   "use strict";
 
   Object.defineProperty(exports, "__esModule", {
@@ -7645,6 +7670,7 @@ if (module.hot) {
     hotAPI.install(require("vue"), true);
     if (!hotAPI.compatible) return;
     module.hot.accept();
+    module.hot.dispose(__vueify_style_dispose__);
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-3f458254", __vue__options__);
     } else {
@@ -7652,8 +7678,43 @@ if (module.hot) {
     }
   })();
 }
-},{"vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\App.vue":[function(require,module,exports) {
-;(function () {
+},{"vueify/lib/insert-css":"node_modules\\vueify\\lib\\insert-css.js","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\UserInfo.vue":[function(require,module,exports) {
+var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".user-info {\r\n  font-family: \"Montserrat\", sans-serif;\r\n  font-weight: 800;\r\n  font-size: 1.5em;\r\n  display: flex;\r\n  flex-direction: column;\r\n  text-transform: uppercase;\r\n}");(function () {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = {
+    name: "UserInfo",
+    props: ["player"]
+  };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+  console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', { staticClass: "user-info" }, [_c('span', { staticClass: "name", style: 'color: ' + this.player.color }, [_vm._v(_vm._s(this.player.name) + ": " + _vm._s(this.player.points))])]);
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+  (function () {
+    var hotAPI = require("vue-hot-reload-api");
+    hotAPI.install(require("vue"), true);
+    if (!hotAPI.compatible) return;
+    module.hot.accept();
+    module.hot.dispose(__vueify_style_dispose__);
+    if (!module.hot.data) {
+      hotAPI.createRecord("data-v-019cb65b", __vue__options__);
+    } else {
+      hotAPI.rerender("data-v-019cb65b", __vue__options__);
+    }
+  })();
+}
+},{"vueify/lib/insert-css":"node_modules\\vueify\\lib\\insert-css.js","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\App.vue":[function(require,module,exports) {
+var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".status {\r\n  display: flex;\r\n  justify-content: space-between;\r\n  margin-bottom: 100px;\r\n  padding: 1em 0.5em 1em 0.5em;\r\n  background-color: rgba(255, 255, 255, 0.5);\r\n}\r\n\r\n.turn-counter {\r\n  font-family: \"Poppins\", sans-serif;\r\n  font-size: 1em;\r\n  text-align: center;\r\n}\r\n\r\n.win-text {\r\n  font-family: \"Poppins\", sans-serif;\r\n  font-size: 1em;\r\n  text-align: center;\r\n}\r\n\r\n.row {\r\n  width: 100%;\r\n  background-color: inherit;\r\n  display: flex;\r\n  justify-content: center;\r\n  align-items: center;\r\n}");(function () {
   "use strict";
 
   Object.defineProperty(exports, "__esModule", {
@@ -7664,6 +7725,10 @@ if (module.hot) {
 
   var _GameField2 = _interopRequireDefault(_GameField);
 
+  var _UserInfo = require("./UserInfo.vue");
+
+  var _UserInfo2 = _interopRequireDefault(_UserInfo);
+
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
   }
@@ -7671,11 +7736,11 @@ if (module.hot) {
   exports.default = {
     name: "App",
     components: {
-      GameField: _GameField2.default
+      GameField: _GameField2.default,
+      UserInfo: _UserInfo2.default
     },
     data: function data() {
       return {
-        turn: 1,
         fields: [],
         finished: false,
         playableFields: [],
@@ -7684,12 +7749,14 @@ if (module.hot) {
           id: 1,
           name: "vasya",
           color: "red",
-          turn: false
+          turn: false,
+          points: 0
         }, {
           id: 2,
           name: "katya",
           color: "green",
-          turn: true
+          turn: true,
+          points: 0
         }]
       };
     },
@@ -7699,6 +7766,17 @@ if (module.hot) {
         return this.players.filter(function (player) {
           return player.turn === true;
         })[0];
+      },
+      winner: function winner() {
+        var playerOne = this.players[0];
+        var playerTwo = this.players[1];
+        if (playerOne.points > playerTwo.points) {
+          return playerOne.name;
+        } else if (playerOne.points === playerTwo.points) {
+          return "Nobody";
+        } else {
+          return playerTwo.name;
+        }
       }
     },
     created: function created() {
@@ -7829,6 +7907,7 @@ if (module.hot) {
         activeField.borders.disabled = true;
         activeField.bgc = "white";
         activeField.capturedBy = player.id;
+        player.points++;
         console.log("capturing #" + id + " field by " + player.name);
         if (this.isGameOver()) {
           this.finished = true;
@@ -7892,11 +7971,11 @@ if (__vue__options__.functional) {
   console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
 }
 __vue__options__.render = function render() {
-  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [!this.finished ? _c('h5', [_vm._v("now " + _vm._s(_vm.playerMove.name + '\'s turn'))]) : _c('h5', [_vm._v("game over")]), _vm._v(" "), _vm._l(_vm.fields, function (element, index) {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [_c('div', { staticClass: "status" }, [_c('user-info', { attrs: { "player": _vm.players[0] } }), _vm._v(" "), !this.finished ? _c('span', { staticClass: "turn-counter" }, [_vm._v("now " + _vm._s(_vm.playerMove.name + '\'s turn'))]) : _vm._e(), _vm._v(" "), this.finished ? _c('span', { staticClass: "turn-counter" }, [_vm._v("game over")]) : _vm._e(), _vm._v(" "), this.finished ? _c('span', { staticClass: "win-text" }, [_vm._v(_vm._s(_vm.winner + ' wins!'))]) : _vm._e(), _vm._v(" "), _c('user-info', { attrs: { "player": _vm.players[1] } })], 1), _vm._v(" "), _c('div', { staticClass: "container" }, _vm._l(_vm.fields, function (element, index) {
     return _c('div', { key: index, staticClass: "row" }, _vm._l(element, function (fields) {
       return !fields.blank ? _c('game-field', { key: fields.id, attrs: { "field-details": fields }, on: { "choseField": _vm.chosenField, "borderClicked": _vm.chosenBorder } }) : _c('game-field', { attrs: { "is-blank": true } });
     }));
-  })], 2);
+  }))]);
 };
 __vue__options__.staticRenderFns = [];
 if (module.hot) {
@@ -7905,14 +7984,15 @@ if (module.hot) {
     hotAPI.install(require("vue"), true);
     if (!hotAPI.compatible) return;
     module.hot.accept();
+    module.hot.dispose(__vueify_style_dispose__);
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-15275e62", __vue__options__);
     } else {
-      hotAPI.reload("data-v-15275e62", __vue__options__);
+      hotAPI.rerender("data-v-15275e62", __vue__options__);
     }
   })();
 }
-},{"./GameField.vue":"src\\GameField.vue","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\main.js":[function(require,module,exports) {
+},{"vueify/lib/insert-css":"node_modules\\vueify\\lib\\insert-css.js","./GameField.vue":"src\\GameField.vue","./UserInfo.vue":"src\\UserInfo.vue","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\main.js":[function(require,module,exports) {
 "use strict";
 
 var _vue = require("vue");
