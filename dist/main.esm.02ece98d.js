@@ -7349,14 +7349,482 @@ if (inBrowser) {
 /*  */
 
 exports.default = Vue;
-},{}],"src\\main.js":[function(require,module,exports) {
+},{}],"node_modules\\vueify\\lib\\insert-css.js":[function(require,module,exports) {
+var inserted = exports.cache = {}
+
+function noop () {}
+
+exports.insert = function (css) {
+  if (inserted[css]) return noop
+  inserted[css] = true
+
+  var elem = document.createElement('style')
+  elem.setAttribute('type', 'text/css')
+
+  if ('textContent' in elem) {
+    elem.textContent = css
+  } else {
+    elem.styleSheet.cssText = css
+  }
+
+  document.getElementsByTagName('head')[0].appendChild(elem)
+  return function () {
+    document.getElementsByTagName('head')[0].removeChild(elem)
+    inserted[css] = false
+  }
+}
+
+},{}],"node_modules\\vue-hot-reload-api\\dist\\index.js":[function(require,module,exports) {
+var Vue // late bind
+var version
+var map = (window.__VUE_HOT_MAP__ = Object.create(null))
+var installed = false
+var isBrowserify = false
+var initHookName = 'beforeCreate'
+
+exports.install = function (vue, browserify) {
+  if (installed) { return }
+  installed = true
+
+  Vue = vue.__esModule ? vue.default : vue
+  version = Vue.version.split('.').map(Number)
+  isBrowserify = browserify
+
+  // compat with < 2.0.0-alpha.7
+  if (Vue.config._lifecycleHooks.indexOf('init') > -1) {
+    initHookName = 'init'
+  }
+
+  exports.compatible = version[0] >= 2
+  if (!exports.compatible) {
+    console.warn(
+      '[HMR] You are using a version of vue-hot-reload-api that is ' +
+        'only compatible with Vue.js core ^2.0.0.'
+    )
+    return
+  }
+}
+
+/**
+ * Create a record for a hot module, which keeps track of its constructor
+ * and instances
+ *
+ * @param {String} id
+ * @param {Object} options
+ */
+
+exports.createRecord = function (id, options) {
+  if(map[id]) { return }
+  
+  var Ctor = null
+  if (typeof options === 'function') {
+    Ctor = options
+    options = Ctor.options
+  }
+  makeOptionsHot(id, options)
+  map[id] = {
+    Ctor: Ctor,
+    options: options,
+    instances: []
+  }
+}
+
+/**
+ * Check if module is recorded
+ *
+ * @param {String} id
+ */
+
+exports.isRecorded = function (id) {
+  return typeof map[id] !== 'undefined'
+}
+
+/**
+ * Make a Component options object hot.
+ *
+ * @param {String} id
+ * @param {Object} options
+ */
+
+function makeOptionsHot(id, options) {
+  if (options.functional) {
+    var render = options.render
+    options.render = function (h, ctx) {
+      var instances = map[id].instances
+      if (ctx && instances.indexOf(ctx.parent) < 0) {
+        instances.push(ctx.parent)
+      }
+      return render(h, ctx)
+    }
+  } else {
+    injectHook(options, initHookName, function() {
+      var record = map[id]
+      if (!record.Ctor) {
+        record.Ctor = this.constructor
+      }
+      record.instances.push(this)
+    })
+    injectHook(options, 'beforeDestroy', function() {
+      var instances = map[id].instances
+      instances.splice(instances.indexOf(this), 1)
+    })
+  }
+}
+
+/**
+ * Inject a hook to a hot reloadable component so that
+ * we can keep track of it.
+ *
+ * @param {Object} options
+ * @param {String} name
+ * @param {Function} hook
+ */
+
+function injectHook(options, name, hook) {
+  var existing = options[name]
+  options[name] = existing
+    ? Array.isArray(existing) ? existing.concat(hook) : [existing, hook]
+    : [hook]
+}
+
+function tryWrap(fn) {
+  return function (id, arg) {
+    try {
+      fn(id, arg)
+    } catch (e) {
+      console.error(e)
+      console.warn(
+        'Something went wrong during Vue component hot-reload. Full reload required.'
+      )
+    }
+  }
+}
+
+function updateOptions (oldOptions, newOptions) {
+  for (var key in oldOptions) {
+    if (!(key in newOptions)) {
+      delete oldOptions[key]
+    }
+  }
+  for (var key$1 in newOptions) {
+    oldOptions[key$1] = newOptions[key$1]
+  }
+}
+
+exports.rerender = tryWrap(function (id, options) {
+  var record = map[id]
+  if (!options) {
+    record.instances.slice().forEach(function (instance) {
+      instance.$forceUpdate()
+    })
+    return
+  }
+  if (typeof options === 'function') {
+    options = options.options
+  }
+  if (record.Ctor) {
+    record.Ctor.options.render = options.render
+    record.Ctor.options.staticRenderFns = options.staticRenderFns
+    record.instances.slice().forEach(function (instance) {
+      instance.$options.render = options.render
+      instance.$options.staticRenderFns = options.staticRenderFns
+      // reset static trees
+      // pre 2.5, all static trees are cahced together on the instance
+      if (instance._staticTrees) {
+        instance._staticTrees = []
+      }
+      // 2.5.0
+      if (Array.isArray(record.Ctor.options.cached)) {
+        record.Ctor.options.cached = []
+      }
+      // 2.5.3
+      if (Array.isArray(instance.$options.cached)) {
+        instance.$options.cached = []
+      }
+      // post 2.5.4: v-once trees are cached on instance._staticTrees.
+      // Pure static trees are cached on the staticRenderFns array
+      // (both already reset above)
+      instance.$forceUpdate()
+    })
+  } else {
+    // functional or no instance created yet
+    record.options.render = options.render
+    record.options.staticRenderFns = options.staticRenderFns
+
+    // handle functional component re-render
+    if (record.options.functional) {
+      // rerender with full options
+      if (Object.keys(options).length > 2) {
+        updateOptions(record.options, options)
+      } else {
+        // template-only rerender.
+        // need to inject the style injection code for CSS modules
+        // to work properly.
+        var injectStyles = record.options._injectStyles
+        if (injectStyles) {
+          var render = options.render
+          record.options.render = function (h, ctx) {
+            injectStyles.call(ctx)
+            return render(h, ctx)
+          }
+        }
+      }
+      record.options._Ctor = null
+      // 2.5.3
+      if (Array.isArray(record.options.cached)) {
+        record.options.cached = []
+      }
+      record.instances.slice().forEach(function (instance) {
+        instance.$forceUpdate()
+      })
+    }
+  }
+})
+
+exports.reload = tryWrap(function (id, options) {
+  var record = map[id]
+  if (options) {
+    if (typeof options === 'function') {
+      options = options.options
+    }
+    makeOptionsHot(id, options)
+    if (record.Ctor) {
+      if (version[1] < 2) {
+        // preserve pre 2.2 behavior for global mixin handling
+        record.Ctor.extendOptions = options
+      }
+      var newCtor = record.Ctor.super.extend(options)
+      record.Ctor.options = newCtor.options
+      record.Ctor.cid = newCtor.cid
+      record.Ctor.prototype = newCtor.prototype
+      if (newCtor.release) {
+        // temporary global mixin strategy used in < 2.0.0-alpha.6
+        newCtor.release()
+      }
+    } else {
+      updateOptions(record.options, options)
+    }
+  }
+  record.instances.slice().forEach(function (instance) {
+    if (instance.$vnode && instance.$vnode.context) {
+      instance.$vnode.context.$forceUpdate()
+    } else {
+      console.warn(
+        'Root or manually mounted instance modified. Full reload required.'
+      )
+    }
+  })
+})
+
+},{}],"src\\GameField.vue":[function(require,module,exports) {
+;(function () {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = {
+    name: "GameField",
+    data: function data() {
+      return {
+        blank: this.isBlank,
+        active: false,
+        captured: false,
+        borders: {
+          top: {
+            disabled: false,
+            capturedBy: null },
+          bottom: {
+            disabled: false,
+            capturedBy: null
+          },
+          right: {
+            disabled: false,
+            capturedBy: null
+          },
+          left: {
+            disabled: false,
+            capturedBy: null
+          }
+        }
+      };
+    },
+
+    props: ["isBlank"],
+    methods: {
+      chosenField: function chosenField() {
+        this.$parent.$options.data.fieldActive = true;
+      }
+    }
+  };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+  console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return !_vm.blank ? _c('div', { staticClass: "box", on: { "click": _vm.chosenField } }, [_vm.active && !_vm.borders.top.disabled ? _c('div', { staticClass: "topborder", on: { "click": _vm.topClicked } }) : _vm._e(), _vm._v(" "), _vm.active && !_vm.borders.bottom.disabled ? _c('div', { staticClass: "bottomborder" }) : _vm._e(), _vm._v(" "), _vm.active && !_vm.borders.right.disabled ? _c('div', { staticClass: "rightborder" }) : _vm._e(), _vm._v(" "), _vm.active && !_vm.borders.left.disabled ? _c('div', { staticClass: "leftborder" }) : _vm._e()]) : _c('div', { staticClass: "blank-box" });
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+  (function () {
+    var hotAPI = require("vue-hot-reload-api");
+    hotAPI.install(require("vue"), true);
+    if (!hotAPI.compatible) return;
+    module.hot.accept();
+    if (!module.hot.data) {
+      hotAPI.createRecord("data-v-3f458254", __vue__options__);
+    } else {
+      hotAPI.reload("data-v-3f458254", __vue__options__);
+    }
+  })();
+}
+},{"vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\GameRow.vue":[function(require,module,exports) {
+;(function () {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _GameField = require("./GameField.vue");
+
+  var _GameField2 = _interopRequireDefault(_GameField);
+
+  function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { default: obj };
+  }
+
+  exports.default = {
+    name: "GameRow",
+    components: {
+      GameField: _GameField2.default
+    },
+    data: function data() {
+      return {
+        fields: this.template
+      };
+    },
+
+    props: ["template"]
+  };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+  console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [_vm._v("\n  " + _vm._s(_vm.field) + "\n")]);
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+  (function () {
+    var hotAPI = require("vue-hot-reload-api");
+    hotAPI.install(require("vue"), true);
+    if (!hotAPI.compatible) return;
+    module.hot.accept();
+    if (!module.hot.data) {
+      hotAPI.createRecord("data-v-1a4228b6", __vue__options__);
+    } else {
+      hotAPI.rerender("data-v-1a4228b6", __vue__options__);
+    }
+  })();
+}
+},{"./GameField.vue":"src\\GameField.vue","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\App.vue":[function(require,module,exports) {
+var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert("#app {\r\n  color: #56b983;\r\n}");(function () {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _GameField = require("./GameField.vue");
+
+  var _GameField2 = _interopRequireDefault(_GameField);
+
+  var _GameRow = require("./GameRow.vue");
+
+  var _GameRow2 = _interopRequireDefault(_GameRow);
+
+  function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { default: obj };
+  }
+
+  exports.default = {
+    name: "App",
+    components: {
+      GameField: _GameField2.default,
+      GameRow: _GameRow2.default
+    },
+    data: function data() {
+      return {
+        fieldActive: false,
+        fields: [],
+        templates: ["..*..", ".***.", "*****", ".***.", "..*.."]
+      };
+    },
+
+    created: function created() {
+      this.fields = this.templates.map(function (value) {
+        return value.split("").map(function (symbol) {
+          return symbol === "." ? { blank: true } : {
+            blank: false,
+            id: Math.floor(Math.random() * 100) + 1
+          };
+        });
+      });
+    },
+    methods: {}
+  };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+  console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', _vm._l(_vm.fields, function (element, index) {
+    return _c('div', { key: index, staticClass: "row" }, _vm._l(element, function (fields, i) {
+      return !fields.blank ? _c('game-field', { key: i }) : _c('game-field', { attrs: { "is-blank": true } });
+    }));
+  }));
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+  (function () {
+    var hotAPI = require("vue-hot-reload-api");
+    hotAPI.install(require("vue"), true);
+    if (!hotAPI.compatible) return;
+    module.hot.accept();
+    module.hot.dispose(__vueify_style_dispose__);
+    if (!module.hot.data) {
+      hotAPI.createRecord("data-v-15275e62", __vue__options__);
+    } else {
+      hotAPI.rerender("data-v-15275e62", __vue__options__);
+    }
+  })();
+}
+},{"vueify/lib/insert-css":"node_modules\\vueify\\lib\\insert-css.js","./GameField.vue":"src\\GameField.vue","./GameRow.vue":"src\\GameRow.vue","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\main.esm.js":[function(require,module,exports) {
 "use strict";
 
 var _vue = require("vue");
 
 var _vue2 = _interopRequireDefault(_vue);
 
+var _App = require("./App.vue");
+
+var _App2 = _interopRequireDefault(_App);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+new _vue2.default({
+  el: "#app",
+  render: function render(h) {
+    return h(_App2.default);
+  }
+});
 
 //! how to build template for field
 // var i = 3,
@@ -7374,71 +7842,82 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 //     Array(1 + i).join(a) + Array((line - i) * 2).join(b) + Array(1 + i).join(a));
 // }
 
-_vue2.default.component("game-field", {
-  props: {
-    isBlank: Boolean
-  },
-  data: function data() {
-    return {
-      blank: this.isBlank,
-      active: false, //when clicked
-      captured: false, //when someone already captured field, cant select
-      borders: {
-        top: {
-          disabled: false, //if someone already took it
-          capturedBy: null //who captured it
-        },
-        bottom: {
-          disabled: false,
-          capturedBy: null
-        },
-        right: {
-          disabled: false,
-          capturedBy: null
-        },
-        left: {
-          disabled: false,
-          capturedBy: null
-        }
-      }
-    };
-  },
-  methods: {
-    chosenField: function chosenField() {
-      this.$parent.$options.data.fieldActive = true;
-      // this.active = !this.active;
-      // console.log(this.active);
-      // console.log('click');
+// Vue.component("game-field", {
+//   props: {
+//     isBlank: Boolean
+//   },
+//   data: function() {
+//     return {
+//       blank: this.isBlank,
+//       active: false, //when clicked
+//       captured: false, //when someone already captured field, cant select
+//       borders: {
+//         top: {
+//           disabled: false, //if someone already took it
+//           capturedBy: null //who captured it
+//         },
+//         bottom: {
+//           disabled: false,
+//           capturedBy: null
+//         },
+//         right: {
+//           disabled: false,
+//           capturedBy: null
+//         },
+//         left: {
+//           disabled: false,
+//           capturedBy: null
+//         }
+//       }
+//     };
+//   },
+//   methods: {
+//     chosenField: function() {
+//       this.$parent.$options.data.fieldActive = true;
+//       // this.active = !this.active;
+//       // console.log(this.active);
+//       // console.log('click');
 
-      //background blinking
-      //borders blinking
-      //show borders
-    }
-  },
-  template: "\n                    <div v-if=\"!blank\" class=\"box\" @click=\"chosenField\">\n                    <div v-if=\"active && !borders.top.disabled\" class=\"topborder\" @click=\"topClicked\"></div>\n                    <div v-if=\"active && !borders.bottom.disabled\" class=\"bottomborder\"></div>\n                    <div v-if=\"active && !borders.right.disabled\" class=\"rightborder\"></div>\n                    <div v-if=\"active && !borders.left.disabled\" class=\"leftborder\"></div>\n                  </div>\n                    <div v-else class=\"blank-box\"></div>\n                "
-});
+//       //background blinking
+//       //borders blinking
+//       //show borders
+//     }
+//   },
+//   template: `
+//                     <div v-if="!blank" class="box" @click="chosenField">
+//                     <div v-if="active && !borders.top.disabled" class="topborder" @click="topClicked"></div>
+//                     <div v-if="active && !borders.bottom.disabled" class="bottomborder"></div>
+//                     <div v-if="active && !borders.right.disabled" class="rightborder"></div>
+//                     <div v-if="active && !borders.left.disabled" class="leftborder"></div>
+//                   </div>
+//                     <div v-else class="blank-box"></div>
+//                 `
+// });
 
-new _vue2.default({
-  el: "#app",
-  data: {
-    fieldActive: false,
-    fields: [],
-    templates: ["..*..", ".***.", "*****", ".***.", "..*.."]
-  },
-  methods: {
-    mounted: function mounted() {
-      this.fields = this.templates.map(function (value) {
-        return value.split("").map(function (symbol) {
-          return symbol === "." ? { type: "blank" } : {
-            type: "field",
-            id: Math.floor(Math.random() * 100) + 1
-          };
-        });
-      });
-    }
-  }
-});
-},{"vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],0:[function(require,module,exports) {
+// new Vue({
+//   el: "#app",
+//   data: {
+//     fieldActive: false,
+//     fields: [],
+//     templates: ["..*..", ".***.", "*****", ".***.", "..*.."]
+//   },
+//   methods: {
+//     mounted: function() {
+//       this.fields = this.templates.map(value =>
+//         value.split("").map(
+//           symbol =>
+//             symbol === "."
+//               ? { type: "blank" }
+//               : {
+//                   type: "field",
+//                   id: Math.floor(Math.random() * 100) + 1
+//                 }
+//         )
+//       );
+//     }
+//   }
+// });
+},{"vue":"node_modules\\vue\\dist\\vue.runtime.esm.js","./App.vue":"src\\App.vue"}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module(config) {
@@ -7457,7 +7936,7 @@ function Module(config) {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:57383/');
+  var ws = new WebSocket('ws://localhost:59973/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -7560,4 +8039,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,"src\\main.js"])
+},{}]},{},[0,"src\\main.esm.js"])
