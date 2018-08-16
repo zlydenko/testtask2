@@ -7349,14 +7349,471 @@ if (inBrowser) {
 /*  */
 
 exports.default = Vue;
-},{}],"src\\main.js":[function(require,module,exports) {
+},{}],"node_modules\\vue-hot-reload-api\\dist\\index.js":[function(require,module,exports) {
+var Vue // late bind
+var version
+var map = (window.__VUE_HOT_MAP__ = Object.create(null))
+var installed = false
+var isBrowserify = false
+var initHookName = 'beforeCreate'
+
+exports.install = function (vue, browserify) {
+  if (installed) { return }
+  installed = true
+
+  Vue = vue.__esModule ? vue.default : vue
+  version = Vue.version.split('.').map(Number)
+  isBrowserify = browserify
+
+  // compat with < 2.0.0-alpha.7
+  if (Vue.config._lifecycleHooks.indexOf('init') > -1) {
+    initHookName = 'init'
+  }
+
+  exports.compatible = version[0] >= 2
+  if (!exports.compatible) {
+    console.warn(
+      '[HMR] You are using a version of vue-hot-reload-api that is ' +
+        'only compatible with Vue.js core ^2.0.0.'
+    )
+    return
+  }
+}
+
+/**
+ * Create a record for a hot module, which keeps track of its constructor
+ * and instances
+ *
+ * @param {String} id
+ * @param {Object} options
+ */
+
+exports.createRecord = function (id, options) {
+  if(map[id]) { return }
+  
+  var Ctor = null
+  if (typeof options === 'function') {
+    Ctor = options
+    options = Ctor.options
+  }
+  makeOptionsHot(id, options)
+  map[id] = {
+    Ctor: Ctor,
+    options: options,
+    instances: []
+  }
+}
+
+/**
+ * Check if module is recorded
+ *
+ * @param {String} id
+ */
+
+exports.isRecorded = function (id) {
+  return typeof map[id] !== 'undefined'
+}
+
+/**
+ * Make a Component options object hot.
+ *
+ * @param {String} id
+ * @param {Object} options
+ */
+
+function makeOptionsHot(id, options) {
+  if (options.functional) {
+    var render = options.render
+    options.render = function (h, ctx) {
+      var instances = map[id].instances
+      if (ctx && instances.indexOf(ctx.parent) < 0) {
+        instances.push(ctx.parent)
+      }
+      return render(h, ctx)
+    }
+  } else {
+    injectHook(options, initHookName, function() {
+      var record = map[id]
+      if (!record.Ctor) {
+        record.Ctor = this.constructor
+      }
+      record.instances.push(this)
+    })
+    injectHook(options, 'beforeDestroy', function() {
+      var instances = map[id].instances
+      instances.splice(instances.indexOf(this), 1)
+    })
+  }
+}
+
+/**
+ * Inject a hook to a hot reloadable component so that
+ * we can keep track of it.
+ *
+ * @param {Object} options
+ * @param {String} name
+ * @param {Function} hook
+ */
+
+function injectHook(options, name, hook) {
+  var existing = options[name]
+  options[name] = existing
+    ? Array.isArray(existing) ? existing.concat(hook) : [existing, hook]
+    : [hook]
+}
+
+function tryWrap(fn) {
+  return function (id, arg) {
+    try {
+      fn(id, arg)
+    } catch (e) {
+      console.error(e)
+      console.warn(
+        'Something went wrong during Vue component hot-reload. Full reload required.'
+      )
+    }
+  }
+}
+
+function updateOptions (oldOptions, newOptions) {
+  for (var key in oldOptions) {
+    if (!(key in newOptions)) {
+      delete oldOptions[key]
+    }
+  }
+  for (var key$1 in newOptions) {
+    oldOptions[key$1] = newOptions[key$1]
+  }
+}
+
+exports.rerender = tryWrap(function (id, options) {
+  var record = map[id]
+  if (!options) {
+    record.instances.slice().forEach(function (instance) {
+      instance.$forceUpdate()
+    })
+    return
+  }
+  if (typeof options === 'function') {
+    options = options.options
+  }
+  if (record.Ctor) {
+    record.Ctor.options.render = options.render
+    record.Ctor.options.staticRenderFns = options.staticRenderFns
+    record.instances.slice().forEach(function (instance) {
+      instance.$options.render = options.render
+      instance.$options.staticRenderFns = options.staticRenderFns
+      // reset static trees
+      // pre 2.5, all static trees are cahced together on the instance
+      if (instance._staticTrees) {
+        instance._staticTrees = []
+      }
+      // 2.5.0
+      if (Array.isArray(record.Ctor.options.cached)) {
+        record.Ctor.options.cached = []
+      }
+      // 2.5.3
+      if (Array.isArray(instance.$options.cached)) {
+        instance.$options.cached = []
+      }
+      // post 2.5.4: v-once trees are cached on instance._staticTrees.
+      // Pure static trees are cached on the staticRenderFns array
+      // (both already reset above)
+      instance.$forceUpdate()
+    })
+  } else {
+    // functional or no instance created yet
+    record.options.render = options.render
+    record.options.staticRenderFns = options.staticRenderFns
+
+    // handle functional component re-render
+    if (record.options.functional) {
+      // rerender with full options
+      if (Object.keys(options).length > 2) {
+        updateOptions(record.options, options)
+      } else {
+        // template-only rerender.
+        // need to inject the style injection code for CSS modules
+        // to work properly.
+        var injectStyles = record.options._injectStyles
+        if (injectStyles) {
+          var render = options.render
+          record.options.render = function (h, ctx) {
+            injectStyles.call(ctx)
+            return render(h, ctx)
+          }
+        }
+      }
+      record.options._Ctor = null
+      // 2.5.3
+      if (Array.isArray(record.options.cached)) {
+        record.options.cached = []
+      }
+      record.instances.slice().forEach(function (instance) {
+        instance.$forceUpdate()
+      })
+    }
+  }
+})
+
+exports.reload = tryWrap(function (id, options) {
+  var record = map[id]
+  if (options) {
+    if (typeof options === 'function') {
+      options = options.options
+    }
+    makeOptionsHot(id, options)
+    if (record.Ctor) {
+      if (version[1] < 2) {
+        // preserve pre 2.2 behavior for global mixin handling
+        record.Ctor.extendOptions = options
+      }
+      var newCtor = record.Ctor.super.extend(options)
+      record.Ctor.options = newCtor.options
+      record.Ctor.cid = newCtor.cid
+      record.Ctor.prototype = newCtor.prototype
+      if (newCtor.release) {
+        // temporary global mixin strategy used in < 2.0.0-alpha.6
+        newCtor.release()
+      }
+    } else {
+      updateOptions(record.options, options)
+    }
+  }
+  record.instances.slice().forEach(function (instance) {
+    if (instance.$vnode && instance.$vnode.context) {
+      instance.$vnode.context.$forceUpdate()
+    } else {
+      console.warn(
+        'Root or manually mounted instance modified. Full reload required.'
+      )
+    }
+  })
+})
+
+},{}],"src\\GameField.vue":[function(require,module,exports) {
+;(function () {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = {
+    name: "GameField",
+    props: ["isBlank", "fieldDetails"],
+    data: function data() {
+      return {
+        blank: this.isBlank
+      };
+    },
+
+    methods: {
+      chosenField: function chosenField() {
+        this.$emit("choseField", {
+          id: this.fieldDetails.id
+        });
+        console.log("clicked in child component - game-field");
+      },
+      borderClicked: function borderClicked(position) {
+        console.log("top border clicked on " + this.fieldDetails.id);
+        this.fieldDetails.borders.disabled || this.fieldDetails.borders[position].disabled ? null : this.$emit("borderClicked", {
+          position: position,
+          id: this.fieldDetails.id
+        });
+      }
+    }
+  };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+  console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return !_vm.blank ? _c('div', { staticClass: "box", style: 'background-color: ' + this.fieldDetails.bgc, on: { "click": _vm.chosenField } }, [(this.fieldDetails.active || this.fieldDetails.borders.top.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "topborder", style: 'background-color: ' + this.fieldDetails.borders.top.color, on: { "click": function click($event) {
+        _vm.borderClicked('top');
+      } } }) : _vm._e(), _vm._v(" "), (this.fieldDetails.active || this.fieldDetails.borders.bottom.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "bottomborder", style: 'background-color: ' + this.fieldDetails.borders.bottom.color, on: { "click": function click($event) {
+        _vm.borderClicked('bottom');
+      } } }) : _vm._e(), _vm._v(" "), (this.fieldDetails.active || this.fieldDetails.borders.right.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "rightborder", style: 'background-color: ' + this.fieldDetails.borders.right.color, on: { "click": function click($event) {
+        _vm.borderClicked('right');
+      } } }) : _vm._e(), _vm._v(" "), (this.fieldDetails.active || this.fieldDetails.borders.left.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "leftborder", style: 'background-color: ' + this.fieldDetails.borders.left.color, on: { "click": function click($event) {
+        _vm.borderClicked('left');
+      } } }) : _vm._e()]) : _c('div', { staticClass: "blank-box" });
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+  (function () {
+    var hotAPI = require("vue-hot-reload-api");
+    hotAPI.install(require("vue"), true);
+    if (!hotAPI.compatible) return;
+    module.hot.accept();
+    if (!module.hot.data) {
+      hotAPI.createRecord("data-v-3f458254", __vue__options__);
+    } else {
+      hotAPI.reload("data-v-3f458254", __vue__options__);
+    }
+  })();
+}
+},{"vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\App.vue":[function(require,module,exports) {
+;(function () {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  var _GameField = require("./GameField.vue");
+
+  var _GameField2 = _interopRequireDefault(_GameField);
+
+  function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { default: obj };
+  }
+
+  exports.default = {
+    name: "App",
+    components: {
+      GameField: _GameField2.default
+    },
+    data: function data() {
+      return {
+        turn: 1,
+        fields: [],
+        playableFields: [],
+        templates: ["..*..", ".***.", "*****", ".***.", "..*.."],
+        players: [{
+          id: 1,
+          name: "vasya",
+          color: "red"
+        }, {
+          id: 2,
+          name: "katya",
+          color: "green"
+        }]
+      };
+    },
+
+    created: function created() {
+      var id = 1;
+      this.fields = this.templates.map(function (value) {
+        return value.split("").map(function (symbol) {
+          return symbol === "." ? { blank: true, id: id++ } : {
+            id: id++,
+            blank: false,
+            active: false,
+            bgc: "",
+            borders: {
+              disabled: false,
+              top: {
+                disabled: false,
+                capturedBy: null,
+                color: "rgb(0,0,0)"
+              },
+              bottom: {
+                disabled: false,
+                capturedBy: null,
+                color: "rgb(0,0,0)"
+              },
+              left: {
+                disabled: false,
+                capturedBy: null,
+                color: "rgb(0,0,0)"
+              },
+              right: {
+                disabled: false,
+                capturedBy: null,
+                color: "rgb(0,0,0)"
+              }
+            }
+          };
+        });
+      });
+    },
+    mounted: function mounted() {
+      var filterPlayableFields = this.fields.map(function (arr) {
+        return arr.filter(function (obj) {
+          return obj.blank === false;
+        });
+      });
+      this.playableFields = [].concat.apply([], filterPlayableFields);
+    },
+    methods: {
+      chosenField: function chosenField(data) {
+        this.playableFields.forEach(function (item, _i, _arr) {
+          item.id === data.id ? item.active = true : item.active = false;
+        });
+
+        console.log("parent component");
+        console.log(data.id);
+      },
+      chosenBorder: function chosenBorder(data) {
+        var playingCharacter = this.turn % 2 !== 0 ? this.players[0] : this.players[1];
+        var playerColor = playingCharacter.color;
+        var activeField = this.playableFields.filter(function (field) {
+          return field.id === data.id;
+        })[0];
+        activeField.borders[data.position].disabled = true;
+        activeField.borders[data.position].capturedBy = playingCharacter.name;
+        activeField.borders[data.position].color = playingCharacter.color;
+        var isFinished = activeField.borders.top.disabled && activeField.borders.bottom.disabled && activeField.borders.right.disabled && activeField.borders.left.disabled;
+
+        if (isFinished) {
+          activeField.borders.disabled = true;
+          activeField.bgc = playerColor;
+          this.turn += 2;
+        } else {
+          this.turn++;
+        }
+        console.log(data);
+      }
+    }
+  };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+  console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [_c('h5', [_vm._v("now " + _vm._s(_vm.turn % 2 !== 0 ? _vm.players[0].name + '\'s turn' : _vm.players[1].name + '\'s turn'))]), _vm._v(" "), _vm._l(_vm.fields, function (element, index) {
+    return _c('div', { key: index, staticClass: "row" }, _vm._l(element, function (fields) {
+      return !fields.blank ? _c('game-field', { key: fields.id, attrs: { "field-details": fields }, on: { "choseField": _vm.chosenField, "borderClicked": _vm.chosenBorder } }) : _c('game-field', { attrs: { "is-blank": true } });
+    }));
+  })], 2);
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+  (function () {
+    var hotAPI = require("vue-hot-reload-api");
+    hotAPI.install(require("vue"), true);
+    if (!hotAPI.compatible) return;
+    module.hot.accept();
+    if (!module.hot.data) {
+      hotAPI.createRecord("data-v-15275e62", __vue__options__);
+    } else {
+      hotAPI.reload("data-v-15275e62", __vue__options__);
+    }
+  })();
+}
+},{"./GameField.vue":"src\\GameField.vue","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\main.js":[function(require,module,exports) {
 "use strict";
 
 var _vue = require("vue");
 
 var _vue2 = _interopRequireDefault(_vue);
 
+var _App = require("./App.vue");
+
+var _App2 = _interopRequireDefault(_App);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+new _vue2.default({
+  el: "#app",
+  render: function render(h) {
+    return h(_App2.default);
+  }
+});
 
 //! how to build template for field
 // var i = 3,
@@ -7373,72 +7830,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 //   x.push(
 //     Array(1 + i).join(a) + Array((line - i) * 2).join(b) + Array(1 + i).join(a));
 // }
-
-_vue2.default.component("game-field", {
-  props: {
-    isBlank: Boolean
-  },
-  data: function data() {
-    return {
-      blank: this.isBlank,
-      active: false, //when clicked
-      captured: false, //when someone already captured field, cant select
-      borders: {
-        top: {
-          disabled: false, //if someone already took it
-          capturedBy: null //who captured it
-        },
-        bottom: {
-          disabled: false,
-          capturedBy: null
-        },
-        right: {
-          disabled: false,
-          capturedBy: null
-        },
-        left: {
-          disabled: false,
-          capturedBy: null
-        }
-      }
-    };
-  },
-  methods: {
-    chosenField: function chosenField() {
-      this.$parent.$options.data.fieldActive = true;
-      // this.active = !this.active;
-      // console.log(this.active);
-      // console.log('click');
-
-      //background blinking
-      //borders blinking
-      //show borders
-    }
-  },
-  template: "\n                    <div v-if=\"!blank\" class=\"box\" @click=\"chosenField\">\n                    <div v-if=\"active && !borders.top.disabled\" class=\"topborder\" @click=\"topClicked\"></div>\n                    <div v-if=\"active && !borders.bottom.disabled\" class=\"bottomborder\"></div>\n                    <div v-if=\"active && !borders.right.disabled\" class=\"rightborder\"></div>\n                    <div v-if=\"active && !borders.left.disabled\" class=\"leftborder\"></div>\n                  </div>\n                    <div v-else class=\"blank-box\"></div>\n                "
-});
-
-new _vue2.default({
-  el: "#app",
-  data: {
-    fieldActive: false,
-    fields: [],
-    templates: ["..*..", ".***.", "*****", ".***.", "..*.."]
-  },
-  methods: {
-    mounted: function mounted() {
-      this.fields = this.templates.map(function (value) {
-        return value.split("").map(function (symbol) {
-          return symbol === "." ? { type: "blank" } : {
-            type: "field",
-            id: Math.floor(Math.random() * 100) + 1
-          };
-        });
-      });
-    }
-  }
-});
-},{"vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],0:[function(require,module,exports) {
+},{"vue":"node_modules\\vue\\dist\\vue.runtime.esm.js","./App.vue":"src\\App.vue"}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module(config) {
@@ -7457,7 +7849,7 @@ function Module(config) {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:57383/');
+  var ws = new WebSocket('ws://localhost:61550/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 

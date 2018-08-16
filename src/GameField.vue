@@ -1,9 +1,9 @@
 <template>
-  <div v-if="!blank" class="box" @click="chosenField">
-    <div v-if="active && !borders.top.disabled" class="topborder" @click="topClicked"></div>
-    <div v-if="active && !borders.bottom.disabled" class="bottomborder"></div>
-    <div v-if="active && !borders.right.disabled" class="rightborder"></div>
-    <div v-if="active && !borders.left.disabled" class="leftborder"></div>
+  <div v-if="!blank" class="box" @click="chosenField" :style="'background-color: '+this.fieldDetails.bgc">
+    <div v-if="(this.fieldDetails.active || this.fieldDetails.borders.top.disabled) && !this.fieldDetails.borders.disabled" class="topborder" @click="borderClicked('top')" :style="'background-color: ' + this.fieldDetails.borders.top.color"></div>
+    <div v-if="(this.fieldDetails.active || this.fieldDetails.borders.bottom.disabled) && !this.fieldDetails.borders.disabled" class="bottomborder" @click="borderClicked('bottom')" :style="'background-color: ' + this.fieldDetails.borders.bottom.color"></div>
+    <div v-if="(this.fieldDetails.active || this.fieldDetails.borders.right.disabled) && !this.fieldDetails.borders.disabled" class="rightborder" @click="borderClicked('right')" :style="'background-color: ' + this.fieldDetails.borders.right.color"></div>
+    <div v-if="(this.fieldDetails.active || this.fieldDetails.borders.left.disabled) && !this.fieldDetails.borders.disabled" class="leftborder" @click="borderClicked('left')" :style="'background-color: ' + this.fieldDetails.borders.left.color"></div>
   </div>
   <div v-else class="blank-box"></div>
 </template>
@@ -11,42 +11,28 @@
 <script>
 export default {
   name: "GameField",
+  props: ["isBlank", "fieldDetails"],
   data() {
     return {
-      blank: this.isBlank,
-      active: false, //when clicked
-      captured: false, //when someone already captured field, cant select
-      borders: {
-        top: {
-          disabled: false, //if someone already took it
-          capturedBy: null //who captured it
-        },
-        bottom: {
-          disabled: false,
-          capturedBy: null
-        },
-        right: {
-          disabled: false,
-          capturedBy: null
-        },
-        left: {
-          disabled: false,
-          capturedBy: null
-        }
-      }
+      blank: this.isBlank
     };
   },
-  props: ["isBlank"],
   methods: {
     chosenField: function() {
-      this.$parent.$options.data.fieldActive = true;
-      // this.active = !this.active;
-      // console.log(this.active);
-      // console.log('click');
-
-      //background blinking
-      //borders blinking
-      //show borders
+      this.$emit("choseField", {
+        id: this.fieldDetails.id
+      });
+      console.log("clicked in child component - game-field");
+    },
+    borderClicked: function(position) {
+      console.log(`top border clicked on ${this.fieldDetails.id}`);
+      this.fieldDetails.borders.disabled ||
+      this.fieldDetails.borders[position].disabled
+        ? null
+        : this.$emit("borderClicked", {
+            position,
+            id: this.fieldDetails.id
+          });
     }
   }
 };
