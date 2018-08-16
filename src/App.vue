@@ -1,25 +1,35 @@
 <template>
   <div>
-    <h5 v-if="!this.finished">now {{playerMove.name + '\'s turn'}}</h5>
-    <h5 v-else>game over</h5>
+    <div class="status">
+      <user-info :player="players[0]"/>
+      <span v-if="!this.finished" class="turn-counter" >now {{playerMove.name + '\'s turn'}}</span>
+      <span v-if="this.finished" class="turn-counter" >game over</span>
+      <span v-if="this.finished" class="win-text">{{winner + ' wins!'}}</span>
+      <user-info :player="players[1]"/>
+    </div>
+    
+    
+    <div class="container">
     <div class="row" v-for="(element,index) in fields" :key="index">
       <game-field @choseField="chosenField" @borderClicked="chosenBorder" v-if="!fields.blank" v-for="(fields) in element" :key="fields.id" :field-details="fields"></game-field>
       <game-field v-else :is-blank="true"></game-field>
       </div>
     </div>
+  </div>
 </template>
 
 <script>
 import GameField from "./GameField.vue";
+import UserInfo from "./UserInfo.vue";
 
 export default {
   name: "App",
   components: {
-    GameField
+    GameField,
+    UserInfo
   },
   data() {
     return {
-      turn: 1,
       fields: [],
       finished: false,
       playableFields: [],
@@ -29,13 +39,15 @@ export default {
           id: 1,
           name: "vasya",
           color: "red",
-          turn: false
+          turn: false,
+          points: 0
         },
         {
           id: 2,
           name: "katya",
           color: "green",
-          turn: true
+          turn: true,
+          points: 0
         }
       ]
     };
@@ -43,6 +55,17 @@ export default {
   computed: {
     playerMove: function() {
       return this.players.filter(player => player.turn === true)[0];
+    },
+    winner: function() {
+      let playerOne = this.players[0];
+      let playerTwo = this.players[1];
+      if (playerOne.points > playerTwo.points) {
+        return playerOne.name;
+      } else if (playerOne.points === playerTwo.points) {
+        return "Nobody";
+      } else {
+        return playerTwo.name;
+      }
     }
   },
   created: function() {
@@ -162,6 +185,7 @@ export default {
       activeField.borders.disabled = true;
       activeField.bgc = "white";
       activeField.capturedBy = player.id;
+      player.points++;
       console.log(`capturing #${id} field by ${player.name}`);
       if (this.isGameOver()) {
         this.finished = true;
@@ -233,4 +257,31 @@ export default {
 </script>
 
 <style lang="css">
+.status {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 100px;
+  padding: 1em 0.5em 1em 0.5em;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.turn-counter {
+  font-family: "Poppins", sans-serif;
+  font-size: 1em;
+  text-align: center;
+}
+
+.win-text {
+  font-family: "Poppins", sans-serif;
+  font-size: 1em;
+  text-align: center;
+}
+
+.row {
+  width: 100%;
+  background-color: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 </style>
