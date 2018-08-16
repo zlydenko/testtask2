@@ -22,10 +22,8 @@ export default {
       this.$emit("choseField", {
         id: this.fieldDetails.id
       });
-      console.log("clicked in child component - game-field");
     },
     borderClicked: function(position) {
-      console.log(`top border clicked on ${this.fieldDetails.id}`);
       this.fieldDetails.borders.disabled ||
       this.fieldDetails.borders[position].disabled
         ? null

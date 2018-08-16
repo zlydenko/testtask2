@@ -7612,10 +7612,8 @@ exports.reload = tryWrap(function (id, options) {
         this.$emit("choseField", {
           id: this.fieldDetails.id
         });
-        console.log("clicked in child component - game-field");
       },
       borderClicked: function borderClicked(position) {
-        console.log("top border clicked on " + this.fieldDetails.id);
         this.fieldDetails.borders.disabled || this.fieldDetails.borders[position].disabled ? null : this.$emit("borderClicked", {
           position: position,
           id: this.fieldDetails.id
@@ -7679,20 +7677,30 @@ if (module.hot) {
       return {
         turn: 1,
         fields: [],
+        finished: false,
         playableFields: [],
         templates: ["..*..", ".***.", "*****", ".***.", "..*.."],
         players: [{
           id: 1,
           name: "vasya",
-          color: "red"
+          color: "red",
+          turn: false
         }, {
           id: 2,
           name: "katya",
-          color: "green"
+          color: "green",
+          turn: true
         }]
       };
     },
 
+    computed: {
+      playerMove: function playerMove() {
+        return this.players.filter(function (player) {
+          return player.turn === true;
+        })[0];
+      }
+    },
     created: function created() {
       var id = 1;
       this.fields = this.templates.map(function (value) {
@@ -7738,7 +7746,6 @@ if (module.hot) {
         });
       });
       this.playableFields = [].concat.apply([], filterPlayableFields);
-
       this.playableFields.forEach(function (item, _i, _arr) {
         var id = item.id;
 
@@ -7748,26 +7755,31 @@ if (module.hot) {
             right = _findNeighbours.right,
             left = _findNeighbours.left;
 
-        if (top.length === 0) item.borders.top.disabled = true;
-        if (bottom.length === 0) item.borders.bottom.disabled = true;
-        if (right.length === 0) item.borders.right.disabled = true;
-        if (left.length === 0) item.borders.left.disabled = true;
+        if (top === undefined) item.borders.top.disabled = true;
+        if (bottom === undefined) item.borders.bottom.disabled = true;
+        if (right === undefined) item.borders.right.disabled = true;
+        if (left === undefined) item.borders.left.disabled = true;
       });
     },
     methods: {
+      delegateMove: function delegateMove() {
+        this.players.forEach(function (player, _i, _arr) {
+          player.turn = !player.turn;
+        });
+      },
       findNeighbours: function findNeighbours(index) {
         var top = this.playableFields.filter(function (x) {
           return x.id === index - 5;
-        });
+        })[0];
         var bottom = this.playableFields.filter(function (x) {
           return x.id === index + 5;
-        });
+        })[0];
         var right = this.playableFields.filter(function (x) {
           return x.id === index + 1;
-        });
+        })[0];
         var left = this.playableFields.filter(function (x) {
           return x.id === index - 1;
-        });
+        })[0];
 
         return {
           top: top,
@@ -7780,30 +7792,83 @@ if (module.hot) {
         this.playableFields.forEach(function (item, _i, _arr) {
           item.id === data.id ? item.active = true : item.active = false;
         });
-
-        console.log("parent component");
-        console.log(data.id);
       },
-      chosenBorder: function chosenBorder(data) {
-        var id = data.id;
-        var playingCharacter = this.turn % 2 !== 0 ? this.players[0] : this.players[1];
-        var playerColor = playingCharacter.color;
+      isFieldFinished: function isFieldFinished(id) {
         var activeField = this.playableFields.filter(function (field) {
           return field.id === id;
         })[0];
-        activeField.borders[data.position].disabled = true;
-        activeField.borders[data.position].capturedBy = playingCharacter.name;
-        activeField.borders[data.position].color = playingCharacter.color;
-        var isFinished = activeField.borders.top.disabled && activeField.borders.bottom.disabled && activeField.borders.right.disabled && activeField.borders.left.disabled;
+        return activeField.borders.top.disabled && activeField.borders.bottom.disabled && activeField.borders.right.disabled && activeField.borders.left.disabled;
+      },
+      captureBorder: function captureBorder(id, position, player) {
+        var activeField = this.playableFields.filter(function (field) {
+          return field.id === id;
+        })[0];
+        activeField.borders[position].disabled = true;
+        activeField.borders[position].capturedBy = player.name;
+        activeField.borders[position].color = player.color;
+        console.log("capturing " + position + " border of #" + id + " box by " + player.name);
+      },
+      captureField: function captureField(id, player) {
+        var index = 0;
+        var activeField = this.playableFields.filter(function (field, _i) {
+          if (field.id === id) {
+            index = _i;
+            return field;
+          } else return false;
+        })[0];
+        activeField.borders.disabled = true;
+        activeField.bgc = player.color;
+        console.log("capturing #" + id + " field by " + player.name);
+        console.log("deleting unplayable field");
+      },
+      chosenBorder: function chosenBorder(data) {
+        var id = data.id;
+        var player = this.playerMove;
 
-        if (isFinished) {
-          activeField.borders.disabled = true;
-          activeField.bgc = playerColor;
-          this.turn += 2;
-        } else {
-          this.turn++;
+        var _findNeighbours2 = this.findNeighbours(id),
+            topNeighbour = _findNeighbours2.top,
+            bottomNeighbour = _findNeighbours2.bottom,
+            rightNeighbour = _findNeighbours2.right,
+            leftNeighbour = _findNeighbours2.left;
+
+        this.captureBorder(id, data.position, player);
+
+        if (this.isFieldFinished(id)) {
+          this.captureField(id, player);
         }
-        console.log(data);
+
+        if (data.position === "top") {
+          this.captureBorder(topNeighbour.id, "bottom", player);
+          if (this.isFieldFinished(topNeighbour.id)) {
+            this.captureField(topNeighbour.id, player);
+          } else if (!this.isFieldFinished(id) && !this.isFieldFinished(topNeighbour.id)) {
+            this.delegateMove();
+          }
+        }
+        if (data.position === "bottom") {
+          this.captureBorder(bottomNeighbour.id, "top", player);
+          if (this.isFieldFinished(bottomNeighbour.id)) {
+            this.captureField(bottomNeighbour.id, player);
+          } else if (!this.isFieldFinished(id) && !this.isFieldFinished(bottomNeighbour.id)) {
+            this.delegateMove();
+          }
+        }
+        if (data.position === "right") {
+          this.captureBorder(rightNeighbour.id, "left", player);
+          if (this.isFieldFinished(rightNeighbour.id)) {
+            this.captureField(rightNeighbour.id, player);
+          } else if (!this.isFieldFinished(id) && !this.isFieldFinished(rightNeighbour.id)) {
+            this.delegateMove();
+          }
+        }
+        if (data.position === "left") {
+          this.captureBorder(leftNeighbour.id, "right", player);
+          if (this.isFieldFinished(leftNeighbour.id)) {
+            this.captureField(leftNeighbour.id, player);
+          } else if (!this.isFieldFinished(id) && !this.isFieldFinished(leftNeighbour.id)) {
+            this.delegateMove();
+          }
+        }
       }
     }
   };
@@ -7814,7 +7879,7 @@ if (__vue__options__.functional) {
   console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
 }
 __vue__options__.render = function render() {
-  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [_c('h5', [_vm._v("now " + _vm._s(_vm.turn % 2 !== 0 ? _vm.players[0].name + '\'s turn' : _vm.players[1].name + '\'s turn'))]), _vm._v(" "), _vm._l(_vm.fields, function (element, index) {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [_c('h5', [_vm._v("now " + _vm._s(_vm.playerMove.name + '\'s turn'))]), _vm._v(" "), _vm._l(_vm.fields, function (element, index) {
     return _c('div', { key: index, staticClass: "row" }, _vm._l(element, function (fields) {
       return !fields.blank ? _c('game-field', { key: fields.id, attrs: { "field-details": fields }, on: { "choseField": _vm.chosenField, "borderClicked": _vm.chosenBorder } }) : _c('game-field', { attrs: { "is-blank": true } });
     }));
@@ -7830,7 +7895,7 @@ if (module.hot) {
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-15275e62", __vue__options__);
     } else {
-      hotAPI.rerender("data-v-15275e62", __vue__options__);
+      hotAPI.reload("data-v-15275e62", __vue__options__);
     }
   })();
 }
