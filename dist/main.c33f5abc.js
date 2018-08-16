@@ -7674,7 +7674,7 @@ if (module.hot) {
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-3f458254", __vue__options__);
     } else {
-      hotAPI.rerender("data-v-3f458254", __vue__options__);
+      hotAPI.reload("data-v-3f458254", __vue__options__);
     }
   })();
 }
@@ -7709,7 +7709,83 @@ if (module.hot) {
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-019cb65b", __vue__options__);
     } else {
-      hotAPI.rerender("data-v-019cb65b", __vue__options__);
+      hotAPI.reload("data-v-019cb65b", __vue__options__);
+    }
+  })();
+}
+},{"vueify/lib/insert-css":"node_modules\\vueify\\lib\\insert-css.js","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\UserCreate.vue":[function(require,module,exports) {
+var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".color-picker {\r\n  margin-top: 20px;\r\n}\r\n\r\n.color-picker p {\r\n  text-align: center;\r\n}\r\n\r\n.colors {\r\n  margin-top: 20px;\r\n  display: flex;\r\n  justify-content: center;\r\n}\r\n\r\n.color {\r\n  border: none;\r\n  cursor: pointer;\r\n  width: 30px;\r\n  height: 30px;\r\n  margin-right: 5px;\r\n}\r\n\r\n.name-input {\r\n  width: 60%;\r\n  margin: 0 auto;\r\n  border: 5px solid;\r\n  display: block;\r\n  padding: 15px;\r\n  border-radius: 10px;\r\n  font-size: 20px;\r\n  margin-top: 30px;\r\n}\r\n\r\n.btn {\r\n  background-color: inherit;\r\n  width: 30%;\r\n  margin: 0 auto;\r\n  border: 3px solid;\r\n  display: block;\r\n  padding: 10px;\r\n  border-radius: 10px;\r\n  font-size: 20px;\r\n  margin-top: 30px;\r\n  margin-bottom: 30px;\r\n}\r\n\r\n.wrapper {\r\n  display: block;\r\n  position: fixed;\r\n  z-index: 1;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  overflow: auto;\r\n  background-color: rgb(0, 0, 0);\r\n  background-color: rgba(0, 0, 0, 0.4);\r\n}\r\n\r\n.content {\r\n  position: relative;\r\n  top: 25%;\r\n  background: linear-gradient(to right, #ffffff, #c1cac1);\r\n  margin: auto;\r\n  padding: 0;\r\n  border: 1px solid #888;\r\n  width: 40%;\r\n  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);\r\n  animation-name: animatetop;\r\n  animation-duration: 0.4s;\r\n}\r\nheader {\r\n  padding: 2px 16px;\r\n  color: white;\r\n}\r\n@keyframes animatetop {\r\n  0% {\r\n    top: -500px;\r\n  }\r\n  100% {\r\n    top: 25%;\r\n  }\r\n}");(function () {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = {
+    name: "UserCreate",
+    props: ["player"],
+    data: function data() {
+      return {
+        name: "",
+        color: ""
+      };
+    },
+
+    methods: {
+      submitPlayer: function submitPlayer() {
+        this.$emit("submittedPlayer", {
+          id: this.player.id,
+          name: this.name,
+          color: this.color
+        });
+        this.name = "";
+        this.color = "";
+      },
+      choseColor: function choseColor(data) {
+        this.color = data;
+      }
+    }
+  };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+  console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', { staticClass: "wrapper" }, [_c('div', { staticClass: "content" }, [_c('header', { style: 'background-color: ' + (this.color || this.player.color) }, [_c('h2', [_vm._v("Player One: " + _vm._s(_vm.name || this.player.name))])]), _vm._v(" "), _c('input', { directives: [{ name: "model", rawName: "v-model", value: _vm.name, expression: "name" }], staticClass: "name-input", style: 'border-color:' + (this.color || this.player.color), attrs: { "placeholder": "enter your name" }, domProps: { "value": _vm.name }, on: { "input": function input($event) {
+        if ($event.target.composing) {
+          return;
+        }_vm.name = $event.target.value;
+      } } }), _vm._v(" "), _c('div', { staticClass: "color-picker" }, [_c('p', [_vm._v("pick a color")]), _vm._v(" "), _c('div', { staticClass: "colors" }, [_c('button', { staticClass: "color", staticStyle: { "background-color": "#001f3f" }, on: { "click": function click($event) {
+        _vm.choseColor('#001f3f');
+      } } }), _vm._v(" "), _c('button', { staticClass: "color", staticStyle: { "background-color": "#0074D9" }, on: { "click": function click($event) {
+        _vm.choseColor('#0074D9');
+      } } }), _vm._v(" "), _c('button', { staticClass: "color", staticStyle: { "background-color": "#39CCCC" }, on: { "click": function click($event) {
+        _vm.choseColor('#39CCCC');
+      } } }), _vm._v(" "), _c('button', { staticClass: "color", staticStyle: { "background-color": "#3D9970" }, on: { "click": function click($event) {
+        _vm.choseColor('#3D9970');
+      } } }), _vm._v(" "), _c('button', { staticClass: "color", staticStyle: { "background-color": "#2ECC40" }, on: { "click": function click($event) {
+        _vm.choseColor('#2ECC40');
+      } } }), _vm._v(" "), _c('button', { staticClass: "color", staticStyle: { "background-color": "#01FF70" }, on: { "click": function click($event) {
+        _vm.choseColor('#01FF70');
+      } } }), _vm._v(" "), _c('button', { staticClass: "color", staticStyle: { "background-color": "#FFDC00" }, on: { "click": function click($event) {
+        _vm.choseColor('#FFDC00');
+      } } }), _vm._v(" "), _c('button', { staticClass: "color", staticStyle: { "background-color": "#FF851B" }, on: { "click": function click($event) {
+        _vm.choseColor('#FF851B');
+      } } })])]), _vm._v(" "), _c('button', { staticClass: "btn", style: 'border-color:' + (this.color || this.player.color), on: { "click": _vm.submitPlayer } }, [_vm._v("go!")])])]);
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+  (function () {
+    var hotAPI = require("vue-hot-reload-api");
+    hotAPI.install(require("vue"), true);
+    if (!hotAPI.compatible) return;
+    module.hot.accept();
+    module.hot.dispose(__vueify_style_dispose__);
+    if (!module.hot.data) {
+      hotAPI.createRecord("data-v-62e62b2e", __vue__options__);
+    } else {
+      hotAPI.rerender("data-v-62e62b2e", __vue__options__);
     }
   })();
 }
@@ -7729,6 +7805,10 @@ var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".status 
 
   var _UserInfo2 = _interopRequireDefault(_UserInfo);
 
+  var _UserCreate = require("./UserCreate.vue");
+
+  var _UserCreate2 = _interopRequireDefault(_UserCreate);
+
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
   }
@@ -7737,10 +7817,15 @@ var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".status 
     name: "App",
     components: {
       GameField: _GameField2.default,
-      UserInfo: _UserInfo2.default
+      UserInfo: _UserInfo2.default,
+      UserCreate: _UserCreate2.default
     },
     data: function data() {
       return {
+        init: {
+          remaining: 2,
+          status: true
+        },
         fields: [],
         finished: false,
         playableFields: [],
@@ -7749,13 +7834,13 @@ var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".status 
           id: 1,
           name: "vasya",
           color: "red",
-          turn: false,
+          turn: true,
           points: 0
         }, {
           id: 2,
           name: "katya",
           color: "green",
-          turn: true,
+          turn: false,
           points: 0
         }]
       };
@@ -7876,6 +7961,15 @@ var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert(".status 
           left: left
         };
       },
+      createUser: function createUser(data) {
+        this.players.filter(function (player) {
+          return player.id === data.id;
+        })[0].name = data.name;
+        this.players.filter(function (player) {
+          return player.id === data.id;
+        })[0].color = data.color;
+        this.init.remaining--;
+      },
       chosenField: function chosenField(data) {
         this.playableFields.forEach(function (item, _i, _arr) {
           item.id === data.id ? item.active = true : item.active = false;
@@ -7971,11 +8065,11 @@ if (__vue__options__.functional) {
   console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
 }
 __vue__options__.render = function render() {
-  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [_c('div', { staticClass: "status" }, [_c('user-info', { attrs: { "player": _vm.players[0] } }), _vm._v(" "), !this.finished ? _c('span', { staticClass: "turn-counter" }, [_vm._v("now " + _vm._s(_vm.playerMove.name + '\'s turn'))]) : _vm._e(), _vm._v(" "), this.finished ? _c('span', { staticClass: "turn-counter" }, [_vm._v("game over")]) : _vm._e(), _vm._v(" "), this.finished ? _c('span', { staticClass: "win-text" }, [_vm._v(_vm._s(_vm.winner + ' wins!'))]) : _vm._e(), _vm._v(" "), _c('user-info', { attrs: { "player": _vm.players[1] } })], 1), _vm._v(" "), _c('div', { staticClass: "container" }, _vm._l(_vm.fields, function (element, index) {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', [this.init.status && this.init.remaining === 2 ? _c('user-create', { attrs: { "player": _vm.players[0] }, on: { "submittedPlayer": _vm.createUser } }) : _vm._e(), _vm._v(" "), this.init.status && this.init.remaining === 1 ? _c('user-create', { attrs: { "player": _vm.players[1] }, on: { "submittedPlayer": _vm.createUser } }) : _vm._e(), _vm._v(" "), _c('div', { staticClass: "status" }, [_c('user-info', { attrs: { "player": _vm.players[0] } }), _vm._v(" "), !this.finished ? _c('span', { staticClass: "turn-counter" }, [_vm._v("now " + _vm._s(_vm.playerMove.name + '\'s turn'))]) : _vm._e(), _vm._v(" "), this.finished ? _c('span', { staticClass: "turn-counter" }, [_vm._v("game over")]) : _vm._e(), _vm._v(" "), this.finished ? _c('span', { staticClass: "win-text" }, [_vm._v(_vm._s(_vm.winner + ' wins!'))]) : _vm._e(), _vm._v(" "), _c('user-info', { attrs: { "player": _vm.players[1] } })], 1), _vm._v(" "), _c('div', { staticClass: "container" }, _vm._l(_vm.fields, function (element, index) {
     return _c('div', { key: index, staticClass: "row" }, _vm._l(element, function (fields) {
       return !fields.blank ? _c('game-field', { key: fields.id, attrs: { "field-details": fields }, on: { "choseField": _vm.chosenField, "borderClicked": _vm.chosenBorder } }) : _c('game-field', { attrs: { "is-blank": true } });
     }));
-  }))]);
+  }))], 1);
 };
 __vue__options__.staticRenderFns = [];
 if (module.hot) {
@@ -7988,11 +8082,11 @@ if (module.hot) {
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-15275e62", __vue__options__);
     } else {
-      hotAPI.rerender("data-v-15275e62", __vue__options__);
+      hotAPI.reload("data-v-15275e62", __vue__options__);
     }
   })();
 }
-},{"vueify/lib/insert-css":"node_modules\\vueify\\lib\\insert-css.js","./GameField.vue":"src\\GameField.vue","./UserInfo.vue":"src\\UserInfo.vue","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\main.js":[function(require,module,exports) {
+},{"vueify/lib/insert-css":"node_modules\\vueify\\lib\\insert-css.js","./GameField.vue":"src\\GameField.vue","./UserInfo.vue":"src\\UserInfo.vue","./UserCreate.vue":"src\\UserCreate.vue","vue-hot-reload-api":"node_modules\\vue-hot-reload-api\\dist\\index.js","vue":"node_modules\\vue\\dist\\vue.runtime.esm.js"}],"src\\main.js":[function(require,module,exports) {
 "use strict";
 
 var _vue = require("vue");
@@ -8046,7 +8140,7 @@ function Module(config) {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:58541/');
+  var ws = new WebSocket('ws://localhost:50467/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 

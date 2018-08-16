@@ -5,9 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "parcel index.html",
-    "build": "parcel build",
-    "test": "npx eslint src/*",
-    "prebuild": "yarn test"
+    "build": "parcel build ./index.html",
+    "test": "npx eslint src/*"
   },
   "keywords": [
     "games",

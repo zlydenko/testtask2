@@ -1,5 +1,9 @@
 <template>
   <div>
+
+    <user-create v-if="this.init.status && this.init.remaining === 2" :player="players[0]" @submittedPlayer="createUser"></user-create>
+    <user-create v-if="this.init.status && this.init.remaining === 1" :player="players[1]" @submittedPlayer="createUser"></user-create>
+    
     <div class="status">
       <user-info :player="players[0]"/>
       <span v-if="!this.finished" class="turn-counter" >now {{playerMove.name + '\'s turn'}}</span>
@@ -21,15 +25,21 @@
 <script>
 import GameField from "./GameField.vue";
 import UserInfo from "./UserInfo.vue";
+import UserCreate from "./UserCreate.vue";
 
 export default {
   name: "App",
   components: {
     GameField,
-    UserInfo
+    UserInfo,
+    UserCreate
   },
   data() {
     return {
+      init: {
+        remaining: 2,
+        status: true
+      },
       fields: [],
       finished: false,
       playableFields: [],
@@ -39,14 +49,14 @@ export default {
           id: 1,
           name: "vasya",
           color: "red",
-          turn: false,
+          turn: true,
           points: 0
         },
         {
           id: 2,
           name: "katya",
           color: "green",
-          turn: true,
+          turn: false,
           points: 0
         }
       ]
@@ -150,6 +160,12 @@ export default {
         right,
         left
       };
+    },
+    createUser: function(data) {
+      this.players.filter(player => player.id === data.id)[0].name = data.name;
+      this.players.filter(player => player.id === data.id)[0].color =
+        data.color;
+      this.init.remaining--;
     },
     chosenField: function(data) {
       this.playableFields.forEach((item, _i, _arr) => {
