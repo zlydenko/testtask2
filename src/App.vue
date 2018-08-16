@@ -82,22 +82,28 @@ export default {
     //traverse array of objects
     this.playableFields.forEach((item, _i, _arr) => {
       let id = item.id;
-      let top = this.playableFields.filter(x => x.id === id - 5);
-      let bottom = this.playableFields.filter(x => x.id === id + 5);
-      let right = this.playableFields.filter(x => x.id === id + 1);
-      let left = this.playableFields.filter(x => x.id === id - 1);
+      let { top, bottom, right, left } = this.findNeighbours(id);
 
       if (top.length === 0) item.borders.top.disabled = true;
       if (bottom.length === 0) item.borders.bottom.disabled = true;
       if (right.length === 0) item.borders.right.disabled = true;
       if (left.length === 0) item.borders.left.disabled = true;
     });
-
-    //! in function that invokes when border clicked:
-    //* check neighbours and they disabled borders
-    //* if they have one - disable opposite (top disabled - disable bottom, etc.)
   },
   methods: {
+    findNeighbours: function(index) {
+      let top = this.playableFields.filter(x => x.id === index - 5);
+      let bottom = this.playableFields.filter(x => x.id === index + 5);
+      let right = this.playableFields.filter(x => x.id === index + 1);
+      let left = this.playableFields.filter(x => x.id === index - 1);
+
+      return {
+        top,
+        bottom,
+        right,
+        left
+      };
+    },
     chosenField: function(data) {
       //find other active fields and change them
       this.playableFields.forEach((item, _i, _arr) => {
@@ -108,12 +114,14 @@ export default {
       console.log(data.id);
     },
     chosenBorder: function(data) {
+      //! in function that invokes when border clicked:
+      //* check neighbours and they disabled borders
+      //* if they have one - disable opposite (top disabled - disable bottom, etc.)
+      let id = data.id;
       let playingCharacter =
         this.turn % 2 !== 0 ? this.players[0] : this.players[1];
       let playerColor = playingCharacter.color;
-      let activeField = this.playableFields.filter(
-        field => field.id === data.id
-      )[0];
+      let activeField = this.playableFields.filter(field => field.id === id)[0];
       activeField.borders[data.position].disabled = true;
       activeField.borders[data.position].capturedBy = playingCharacter.name;
       activeField.borders[data.position].color = playingCharacter.color;

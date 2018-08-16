@@ -7741,18 +7741,12 @@ if (module.hot) {
 
       this.playableFields.forEach(function (item, _i, _arr) {
         var id = item.id;
-        var top = _this.playableFields.filter(function (x) {
-          return x.id === id - 5;
-        });
-        var bottom = _this.playableFields.filter(function (x) {
-          return x.id === id + 5;
-        });
-        var right = _this.playableFields.filter(function (x) {
-          return x.id === id + 1;
-        });
-        var left = _this.playableFields.filter(function (x) {
-          return x.id === id - 1;
-        });
+
+        var _findNeighbours = _this.findNeighbours(id),
+            top = _findNeighbours.top,
+            bottom = _findNeighbours.bottom,
+            right = _findNeighbours.right,
+            left = _findNeighbours.left;
 
         if (top.length === 0) item.borders.top.disabled = true;
         if (bottom.length === 0) item.borders.bottom.disabled = true;
@@ -7761,6 +7755,27 @@ if (module.hot) {
       });
     },
     methods: {
+      findNeighbours: function findNeighbours(index) {
+        var top = this.playableFields.filter(function (x) {
+          return x.id === index - 5;
+        });
+        var bottom = this.playableFields.filter(function (x) {
+          return x.id === index + 5;
+        });
+        var right = this.playableFields.filter(function (x) {
+          return x.id === index + 1;
+        });
+        var left = this.playableFields.filter(function (x) {
+          return x.id === index - 1;
+        });
+
+        return {
+          top: top,
+          bottom: bottom,
+          right: right,
+          left: left
+        };
+      },
       chosenField: function chosenField(data) {
         this.playableFields.forEach(function (item, _i, _arr) {
           item.id === data.id ? item.active = true : item.active = false;
@@ -7770,10 +7785,11 @@ if (module.hot) {
         console.log(data.id);
       },
       chosenBorder: function chosenBorder(data) {
+        var id = data.id;
         var playingCharacter = this.turn % 2 !== 0 ? this.players[0] : this.players[1];
         var playerColor = playingCharacter.color;
         var activeField = this.playableFields.filter(function (field) {
-          return field.id === data.id;
+          return field.id === id;
         })[0];
         activeField.borders[data.position].disabled = true;
         activeField.borders[data.position].capturedBy = playingCharacter.name;
