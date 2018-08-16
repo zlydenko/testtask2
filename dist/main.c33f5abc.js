@@ -7628,7 +7628,7 @@ if (__vue__options__.functional) {
   console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
 }
 __vue__options__.render = function render() {
-  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return !_vm.blank ? _c('div', { staticClass: "box", style: 'background-color: ' + this.fieldDetails.bgc, on: { "click": _vm.chosenField } }, [(this.fieldDetails.active || this.fieldDetails.borders.top.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "topborder", style: 'background-color: ' + this.fieldDetails.borders.top.color, on: { "click": function click($event) {
+  var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return !_vm.blank ? _c('div', { staticClass: "box", on: { "click": _vm.chosenField } }, [(this.fieldDetails.active || this.fieldDetails.borders.top.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "topborder", style: 'background-color: ' + this.fieldDetails.borders.top.color, on: { "click": function click($event) {
         _vm.borderClicked('top');
       } } }) : _vm._e(), _vm._v(" "), (this.fieldDetails.active || this.fieldDetails.borders.bottom.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "bottomborder", style: 'background-color: ' + this.fieldDetails.borders.bottom.color, on: { "click": function click($event) {
         _vm.borderClicked('bottom');
@@ -7636,7 +7636,7 @@ __vue__options__.render = function render() {
         _vm.borderClicked('right');
       } } }) : _vm._e(), _vm._v(" "), (this.fieldDetails.active || this.fieldDetails.borders.left.disabled) && !this.fieldDetails.borders.disabled ? _c('div', { staticClass: "leftborder", style: 'background-color: ' + this.fieldDetails.borders.left.color, on: { "click": function click($event) {
         _vm.borderClicked('left');
-      } } }) : _vm._e()]) : _c('div', { staticClass: "blank-box" });
+      } } }) : _vm._e(), _vm._v(" "), this.fieldDetails.borders.disabled && this.fieldDetails.capturedBy === 1 ? _c('img', { attrs: { "src": "https://image.flaticon.com/icons/svg/25/25298.svg", "width": "20", "height": "20/" } }) : _vm._e(), _vm._v(" "), this.fieldDetails.borders.disabled && this.fieldDetails.capturedBy === 2 ? _c('img', { attrs: { "src": "https://image.flaticon.com/icons/svg/61/61695.svg", "width": "20", "height": "20/" } }) : _vm._e()]) : _c('div', { staticClass: "blank-box" });
 };
 __vue__options__.staticRenderFns = [];
 if (module.hot) {
@@ -7648,7 +7648,7 @@ if (module.hot) {
     if (!module.hot.data) {
       hotAPI.createRecord("data-v-3f458254", __vue__options__);
     } else {
-      hotAPI.reload("data-v-3f458254", __vue__options__);
+      hotAPI.rerender("data-v-3f458254", __vue__options__);
     }
   })();
 }
@@ -7712,6 +7712,7 @@ if (module.hot) {
             bgc: "",
             borders: {
               disabled: false,
+              capturedBy: null,
               top: {
                 disabled: false,
                 capturedBy: null,
@@ -7826,7 +7827,8 @@ if (module.hot) {
           } else return false;
         })[0];
         activeField.borders.disabled = true;
-        activeField.bgc = player.color;
+        activeField.bgc = "white";
+        activeField.capturedBy = player.id;
         console.log("capturing #" + id + " field by " + player.name);
         if (this.isGameOver()) {
           this.finished = true;

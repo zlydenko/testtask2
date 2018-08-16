@@ -58,6 +58,7 @@ export default {
               bgc: "",
               borders: {
                 disabled: false,
+                capturedBy: null,
                 top: {
                   disabled: false,
                   capturedBy: null,
@@ -159,7 +160,8 @@ export default {
         } else return false;
       })[0];
       activeField.borders.disabled = true;
-      activeField.bgc = player.color;
+      activeField.bgc = "white";
+      activeField.capturedBy = player.id;
       console.log(`capturing #${id} field by ${player.name}`);
       if (this.isGameOver()) {
         this.finished = true;
