@@ -47,14 +47,14 @@ export default {
       players: [
         {
           id: 1,
-          name: "vasya",
+          name: "player-one",
           color: "red",
           turn: true,
           points: 0
         },
         {
           id: 2,
-          name: "katya",
+          name: "player-two",
           color: "green",
           turn: false,
           points: 0
